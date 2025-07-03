@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const socketIo = require('socket.io');
+const path = require('path'); // ✅ required to serve static files
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +19,9 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// ✅ Serve frontend static files (React build)
+app.use(express.static(path.join(__dirname, 'build')));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/digitalwellness', {
@@ -37,6 +41,11 @@ mongoose.connection.on('error', (err) => {
 app.use('/api/users', require('./routes/users'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/predictions', require('./routes/predictions'));
+
+// ✅ Catch-all: for React routing (serves index.html if no API matched)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 // Socket.io for real-time updates
 io.on('connection', (socket) => {
